@@ -18,7 +18,7 @@ body {font-size: 14px;}
 .install .header div {float: right;margin-right: 10px;font-size: 13px;color: lightgray;}
 .install .box-page {height: 430px;}
 .install .box-page .box-content {height: 400px;overflow: auto;overflow-x: hidden;padding-left: 10px;padding-right: 10px;border-top: 1px solid #6999ec;border-left: 1px solid #6999ec;border-right: 1px solid #6999ec;border-bottom: 1px solid #6999ec;border-radius: 4px;}
-.install .box-page .box-content form .wrapper{height: 35px;line-height: 35px;margin-top:5px;}
+.install .box-page .box-content form .wrapper{line-height: 35px;margin-top:5px;}
 .install .box-page .box-content form .wrapper span{color: #6999ec;}
 .install .box-page .box-content form label{width:140px;margin-right: 10px;;}
 .install .box-page .box-content form input[type=text],input[type=number]{width:250px;height:28px;font-size: 14px;padding-left:5px;padding-right:5px;}
@@ -64,7 +64,7 @@ select {
 						<div class="wrapper"><label>数据库地址</label><input type="text" maxlength="100" name="host" value="localhost"/></div>
 						<div class="wrapper"><label>数据库端口</label><input type="number" maxlength="10" name="port" value="${defaultPort}"/></div>
 						<div class="wrapper"><label>数据库名称</label><input type="text" maxlength="50" name="database" value="publiccms"/></div>
-						<div class="wrapper"><span>请输入已有的数据库名称，CMS程序不会自动创建数据库</span></div>
+						<div class="wrapper"><span>请输入已有的数据库名称，字符集编码为utf8或utf8mb4，CMS程序不会自动创建数据库</span></div>
 						<div class="wrapper"><label>数据库用户</label><input type="text" maxlength="50" name="username"/></div>
 						<div class="wrapper"><label>数据库密码</label><input type="text" maxlength="50" name="password"/></div>
 					</form>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<artifactId>publiccms</artifactId>
@@ -7,23 +8,23 @@
 	<parent>
 		<groupId>com.publiccms</groupId>
 		<artifactId>publiccms-parent</artifactId>
-		<version>V4.0.20180210</version>
+		<version>V4.0.181024</version>
 	</parent>
 	<dependencies>
 		<dependency>
 			<groupId>com.publiccms</groupId>
 			<artifactId>publiccms-core</artifactId>
-			<version>V4.0.20180210</version>
+			<version>V4.0.181024</version>
 		</dependency>
 		<dependency>
 			<groupId>com.publiccms</groupId>
 			<artifactId>publiccms-oauth</artifactId>
-			<version>V4.0.20180210</version>
+			<version>V4.0.181024</version>
 		</dependency>
 		<dependency>
 			<groupId>com.publiccms</groupId>
 			<artifactId>publiccms-redis</artifactId>
-			<version>V4.0.20180210</version>
+			<version>V4.0.181024</version>
 		</dependency>
 		<dependency>
 			<groupId>junit</groupId>

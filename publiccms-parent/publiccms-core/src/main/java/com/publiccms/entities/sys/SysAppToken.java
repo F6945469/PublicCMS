@@ -33,6 +33,8 @@ public class SysAppToken implements java.io.Serializable {
     private int appId;
     @GeneratorColumn(title = "创建日期", condition = true)
     private Date createDate;
+    @GeneratorColumn(title = "过期日期", condition = true, order = true)
+    private Date expiryDate;
 
     public SysAppToken() {
     }
@@ -42,8 +44,15 @@ public class SysAppToken implements java.io.Serializable {
         this.appId = appId;
         this.createDate = createDate;
     }
+    public SysAppToken(String authToken, int appId, Date createDate, Date expiryDate) {
+        this.authToken = authToken;
+        this.appId = appId;
+        this.createDate = createDate;
+        this.expiryDate = expiryDate;
+    }
 
     @Id
+
     @Column(name = "auth_token", unique = true, nullable = false, length = 40)
     public String getAuthToken() {
         return this.authToken;
@@ -72,4 +81,13 @@ public class SysAppToken implements java.io.Serializable {
         this.createDate = createDate;
     }
 
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "expiry_date", length = 19)
+    public Date getExpiryDate() {
+        return this.expiryDate;
+    }
+
+    public void setExpiryDate(Date expiryDate) {
+        this.expiryDate = expiryDate;
+    }
 }

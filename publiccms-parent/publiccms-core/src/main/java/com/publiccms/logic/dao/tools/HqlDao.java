@@ -21,15 +21,15 @@ public class HqlDao extends BaseDao<Object> {
     
     /**
      * @param hql
-     * @param paramters
+     * @param parameters
      * @param pageIndex
      * @param pageSize
      * @return results page
      */
-    public PageHandler getPage(String hql, Map<String, Object> paramters, Integer pageIndex, Integer pageSize) {
+    public PageHandler getPage(String hql, Map<String, Object> parameters, Integer pageIndex, Integer pageSize) {
         QueryHandler queryHandler = getQueryHandler(hql);
-        if (CommonUtils.notEmpty(paramters)) {
-            for (Entry<String, Object> entry : paramters.entrySet()) {
+        if (CommonUtils.notEmpty(parameters)) {
+            for (Entry<String, Object> entry : parameters.entrySet()) {
                 queryHandler.setParameter(entry.getKey(), entry.getValue());
             }
         }
@@ -50,7 +50,7 @@ public class HqlDao extends BaseDao<Object> {
      * @return number of data deleted
      */
     public int delete(String hql) {
-        QueryHandler queryHandler = getDeleteQueryHandler(hql);
+        QueryHandler queryHandler = getQueryHandler(hql);
         return delete(queryHandler);
     }
 
@@ -58,7 +58,7 @@ public class HqlDao extends BaseDao<Object> {
      * @return analyzer
      */
     public Analyzer getAnalyzer() {
-        return super.getFullTextSession().getSearchFactory().getAnalyzer("default");
+        return super.getFullTextSession().getSearchFactory().getAnalyzer("cms");
     }
 
     @Override

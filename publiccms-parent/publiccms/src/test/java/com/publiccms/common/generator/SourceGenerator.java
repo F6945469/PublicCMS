@@ -14,7 +14,7 @@ import java.util.Set;
 
 import org.apache.commons.lang3.StringUtils;
 
-import com.publiccms.common.base.Base;
+import com.publiccms.common.constants.CommonConstants;
 import com.publiccms.common.generator.annotation.GeneratorColumn;
 import com.publiccms.common.generator.entity.EntityColumn;
 import com.publiccms.common.generator.entity.EntityCondition;
@@ -29,7 +29,7 @@ import freemarker.template.TemplateException;
  * SourceMaker 代码生成工具
  *
  */
-public class SourceGenerator implements Base {
+public class SourceGenerator {
 
     /**
      * @param arg
@@ -106,7 +106,7 @@ public class SourceGenerator implements Base {
      * @throws IOException
      */
     public void generate(String basePackage, boolean overwrite) throws ClassNotFoundException, IOException {
-        String entitiesFullPackage = basePackage + DOT + ENTITY_BASE_PACKAGE;
+        String entitiesFullPackage = basePackage + CommonConstants.DOT + ENTITY_BASE_PACKAGE;
         for (Class<?> c : ScanClassUtils.getClasses(new String[] { entitiesFullPackage })) {
             generate(c, basePackage, overwrite);
         }
@@ -121,8 +121,10 @@ public class SourceGenerator implements Base {
      * @throws IOException
      * @throws ClassNotFoundException
      */
-    public void generate(String basePackage, String entityPackage, boolean overwrite) throws ClassNotFoundException, IOException {
-        String entitiesFullPackage = basePackage + DOT + ENTITY_BASE_PACKAGE + DOT + entityPackage;
+    public void generate(String basePackage, String entityPackage, boolean overwrite)
+            throws ClassNotFoundException, IOException {
+        String entitiesFullPackage = basePackage + CommonConstants.DOT + ENTITY_BASE_PACKAGE + CommonConstants.DOT
+                + entityPackage;
         for (Class<?> c : ScanClassUtils.getClasses(new String[] { entitiesFullPackage })) {
             generate(c, basePackage, overwrite);
         }
@@ -137,17 +139,17 @@ public class SourceGenerator implements Base {
      */
     public void generate(Class<?> c, String basePackage, boolean overwrite) {
         String name = c.getSimpleName();
-        String base = basePackage + DOT + ENTITY_BASE_PACKAGE + DOT;
+        String base = basePackage + CommonConstants.DOT + ENTITY_BASE_PACKAGE + CommonConstants.DOT;
         String entitiesPackage = c.getPackage().getName().substring((base).length(), c.getPackage().getName().length());
 
-        System.out.println("entity:" + base + entitiesPackage + DOT + name);
+        System.out.println("entity:" + base + entitiesPackage + CommonConstants.DOT + name);
         Map<String, Object> model = new HashMap<>();
 
-        String entityPack = ENTITY_BASE_PACKAGE + DOT + entitiesPackage;
-        String daoPack = DAO_BASE_PACKAGE + DOT + entitiesPackage;
-        String servicePack = SERVICE_BASE_PACKAGE + DOT + entitiesPackage;
-        String directivePack = DIRECTIVE_BASE_PACKAGE + DOT + entitiesPackage;
-        String controllerPack = CONTROLLER_BASE_PACKAGE + DOT + entitiesPackage;
+        String entityPack = ENTITY_BASE_PACKAGE + CommonConstants.DOT + entitiesPackage;
+        String daoPack = DAO_BASE_PACKAGE + CommonConstants.DOT + entitiesPackage;
+        String servicePack = SERVICE_BASE_PACKAGE + CommonConstants.DOT + entitiesPackage;
+        String directivePack = DIRECTIVE_BASE_PACKAGE + CommonConstants.DOT + entitiesPackage;
+        String controllerPack = CONTROLLER_BASE_PACKAGE + CommonConstants.DOT + entitiesPackage;
 
         model.put("base", basePackage);
         model.put("entityPack", entityPack);
@@ -196,7 +198,8 @@ public class SourceGenerator implements Base {
                 }
 
                 GeneratorColumn column = field.getAnnotation(GeneratorColumn.class);
-                String shortTypeName = typeName.substring(typeName.lastIndexOf(DOT) + 1, typeName.length());
+                String shortTypeName = typeName.substring(typeName.lastIndexOf(CommonConstants.DOT) + 1,
+                        typeName.length());
                 if (null != column) {
                     columnList.add(new EntityColumn(field.getName(), shortTypeName, column.order(), column.title()));
                     if (column.condition()) {
@@ -206,7 +209,8 @@ public class SourceGenerator implements Base {
                         String key = StringUtils.isNotBlank(column.name()) ? column.name() : field.getName();
                         EntityCondition condition = conditionMap.get(key);
                         if (null == condition) {
-                            condition = new EntityCondition(key, shortTypeName, column.title(), column.or(), column.like());
+                            condition = new EntityCondition(key, shortTypeName, column.title(), column.or(),
+                                    column.like());
                         }
                         condition.getNameList().add(field.getName());
                         conditionMap.put(key, condition);
@@ -220,28 +224,38 @@ public class SourceGenerator implements Base {
         model.put("columnList", columnList);
         model.put("conditionList", conditionMap.values());
 
-        String daoPath = JAVA_BASE_PATH + basePackage.replace('.', '/') + "/" + daoPack.replace('.', '/') + "/";
-        String servicePath = JAVA_BASE_PATH + basePackage.replace('.', '/') + "/" + servicePack.replace('.', '/') + "/";
-        String directivePath = JAVA_BASE_PATH + basePackage.replace('.', '/') + "/" + directivePack.replace('.', '/') + "/";
-        String controllerPath = JAVA_BASE_PATH + basePackage.replace('.', '/') + "/" + controllerPack.replace('.', '/') + "/";
+        String daoPath = JAVA_BASE_PATH + basePackage.replace(CommonConstants.DOT, CommonConstants.SEPARATOR)
+                + CommonConstants.SEPARATOR + daoPack.replace(CommonConstants.DOT, CommonConstants.SEPARATOR)
+                + CommonConstants.SEPARATOR;
+        String servicePath = JAVA_BASE_PATH + basePackage.replace(CommonConstants.DOT, CommonConstants.SEPARATOR)
+                + CommonConstants.SEPARATOR + servicePack.replace(CommonConstants.DOT, CommonConstants.SEPARATOR)
+                + CommonConstants.SEPARATOR;
+        String directivePath = JAVA_BASE_PATH + basePackage.replace(CommonConstants.DOT, CommonConstants.SEPARATOR)
+                + CommonConstants.SEPARATOR + directivePack.replace(CommonConstants.DOT, CommonConstants.SEPARATOR)
+                + CommonConstants.SEPARATOR;
+        String controllerPath = JAVA_BASE_PATH + basePackage.replace(CommonConstants.DOT, CommonConstants.SEPARATOR)
+                + CommonConstants.SEPARATOR + controllerPack.replace(CommonConstants.DOT, CommonConstants.SEPARATOR)
+                + CommonConstants.SEPARATOR;
 
         try {
-            FreeMarkerUtils.generateFileByFile("java/dao.ftl", daoPath + name + DAO_SUFFIX + ".java", config, model, overwrite);
-            FreeMarkerUtils.generateFileByFile("java/service.ftl", servicePath + name + SERVICE_SUFFIX + ".java", config, model,
+            FreeMarkerUtils.generateFileByFile("java/dao.ftl", daoPath + name + DAO_SUFFIX + ".java", config, model,
                     overwrite);
-            FreeMarkerUtils.generateFileByFile("java/directive.ftl", directivePath + name + DIRECTIVE_SUFFIX + ".java", config,
-                    model, overwrite);
+            FreeMarkerUtils.generateFileByFile("java/service.ftl", servicePath + name + SERVICE_SUFFIX + ".java",
+                    config, model, overwrite);
+            FreeMarkerUtils.generateFileByFile("java/directive.ftl", directivePath + name + DIRECTIVE_SUFFIX + ".java",
+                    config, model, overwrite);
             FreeMarkerUtils.generateFileByFile("java/directiveList.ftl",
                     directivePath + name + "List" + DIRECTIVE_SUFFIX + ".java", config, model, overwrite);
-            FreeMarkerUtils.generateFileByFile("java/controller.ftl", controllerPath + name + CONTROLLER_SUFFIX + ".java", config,
-                    model, overwrite);
+            FreeMarkerUtils.generateFileByFile("java/controller.ftl",
+                    controllerPath + name + CONTROLLER_SUFFIX + ".java", config, model, overwrite);
             FreeMarkerUtils.generateFileByFile("html/list.ftl",
                     TEMPLATE_BASE_PATH + StringUtils.uncapitalize(name) + "/list.html", config, model, overwrite);
-            FreeMarkerUtils.generateFileByFile("html/add.ftl", TEMPLATE_BASE_PATH + StringUtils.uncapitalize(name) + "/add.html",
-                    config, model, overwrite);
-            FreeMarkerUtils.generateFileByFile("html/doc.ftl", WEB_BASE_PATH + "doc.txt", config, model, overwrite, true);
-            FreeMarkerUtils.generateFileByFile("html/language.ftl", WEB_BASE_PATH + "language/operate.txt", config, model,
-                    overwrite, true);
+            FreeMarkerUtils.generateFileByFile("html/add.ftl",
+                    TEMPLATE_BASE_PATH + StringUtils.uncapitalize(name) + "/add.html", config, model, overwrite);
+            FreeMarkerUtils.generateFileByFile("html/doc.ftl", WEB_BASE_PATH + "doc.txt", config, model, overwrite,
+                    true);
+            FreeMarkerUtils.generateFileByFile("html/language.ftl", WEB_BASE_PATH + "language/operate.txt", config,
+                    model, overwrite, true);
         } catch (IOException e) {
             System.out.println(e.getMessage());
         } catch (TemplateException e) {

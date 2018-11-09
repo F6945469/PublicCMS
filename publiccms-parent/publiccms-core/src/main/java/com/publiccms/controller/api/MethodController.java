@@ -7,7 +7,6 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -16,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.publiccms.common.base.AbstractController;
 import com.publiccms.common.base.BaseMethod;
+import com.publiccms.common.constants.CommonConstants;
 import com.publiccms.common.tools.CommonUtils;
 import com.publiccms.entities.sys.SysApp;
 import com.publiccms.entities.sys.SysAppToken;
@@ -44,7 +44,7 @@ public class MethodController extends AbstractController {
     public static final Map<String, String> NEED_APP_TOKEN_MAP = new HashMap<String, String>() {
         private static final long serialVersionUID = 1L;
         {
-            put(ERROR, ApiController.NEED_APP_TOKEN);
+            put(CommonConstants.ERROR, ApiController.NEED_APP_TOKEN);
         }
     };
 
@@ -54,17 +54,16 @@ public class MethodController extends AbstractController {
      * @param name
      * @param appToken
      * @param request
-     * @param response
      * @return result
      */
     @RequestMapping("method/{name}")
-    public Object method(@PathVariable String name, String appToken, HttpServletRequest request, HttpServletResponse response) {
+    public Object method(@PathVariable String name, String appToken, HttpServletRequest request) {
         BaseMethod method = methodMap.get(name);
         if (null != method) {
             try {
                 if (method.needAppToken()) {
                     SysAppToken token = appTokenService.getEntity(appToken);
-                    if (null == token) {
+                    if (null == token || null != token.getExpiryDate() && CommonUtils.getDate().after(token.getExpiryDate())) {
                         return NEED_APP_TOKEN_MAP;
                     }
                     SysApp app = appService.getEntity(token.getAppId());
@@ -73,25 +72,25 @@ public class MethodController extends AbstractController {
                     }
                 }
                 Map<String, Object> map = new HashMap<>();
-                String[] paramters = request.getParameterValues("paramters");
-                if (CommonUtils.notEmpty(paramters) && paramters.length >= method.minParamtersNumber()) {
+                String[] parameters = request.getParameterValues("parameters");
+                if (CommonUtils.notEmpty(parameters) && parameters.length >= method.minParametersNumber()) {
                     List<TemplateModel> list = new ArrayList<>();
-                    for (String paramter : paramters) {
-                        list.add(getObjectWrapper().wrap(paramter));
+                    for (String parameter : parameters) {
+                        list.add(getObjectWrapper().wrap(parameter));
                     }
                     map.put("result", method.exec(list));
                     return map;
-                } else if (CommonUtils.empty(paramters) && 0 == method.minParamtersNumber()) {
+                } else if (CommonUtils.empty(parameters) && 0 == method.minParametersNumber()) {
                     map.put("result", method.exec(null));
                     return map;
                 } else {
-                    map.put(ERROR, "paramtersError");
+                    map.put(CommonConstants.ERROR, "parametersError");
                     return map;
                 }
             } catch (TemplateModelException e) {
                 log.error(e.getMessage(), e);
                 Map<String, String> map = new HashMap<>();
-                map.put(ERROR, ApiController.EXCEPTION);
+                map.put(CommonConstants.ERROR, ApiController.EXCEPTION);
                 return map;
             }
         } else {
@@ -123,7 +122,7 @@ public class MethodController extends AbstractController {
             if (entry.getValue().httpEnabled()) {
                 Map<String, String> resultMap = new HashMap<>();
                 resultMap.put("name", entry.getKey());
-                resultMap.put("minParamters", String.valueOf(entry.getValue().minParamtersNumber()));
+                resultMap.put("minParameters", String.valueOf(entry.getValue().minParametersNumber()));
                 resultMap.put("needAppToken", String.valueOf(entry.getValue().needAppToken()));
                 resultMap.put("needUserToken", String.valueOf(false));
                 methodList.add(resultMap);

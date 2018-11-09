@@ -5,6 +5,7 @@ import java.util.Date;
 import org.springframework.stereotype.Repository;
 
 import com.publiccms.common.base.BaseDao;
+import com.publiccms.common.constants.CommonConstants;
 import com.publiccms.common.handler.PageHandler;
 import com.publiccms.common.handler.QueryHandler;
 import com.publiccms.common.tools.CommonUtils;
@@ -69,7 +70,7 @@ public class CmsPlaceDao extends BaseDao<CmsPlace> {
             orderType = ORDERTYPE_DESC;
         }
         if (null == orderField) {
-            orderField = BLANK;
+            orderField = CommonConstants.BLANK;
         }
         switch (orderField) {
         case "createDate":
@@ -91,7 +92,7 @@ public class CmsPlaceDao extends BaseDao<CmsPlace> {
      */
     public int delete(short siteId, String path) {
         if (CommonUtils.notEmpty(path)) {
-            QueryHandler queryHandler = getDeleteQueryHandler("from CmsPlace bean");
+            QueryHandler queryHandler = getQueryHandler("delete from CmsPlace bean");
             queryHandler.condition("bean.siteId = :siteId").setParameter("siteId", siteId);
             queryHandler.condition("bean.path = :path").setParameter("path", path);
             return delete(queryHandler);

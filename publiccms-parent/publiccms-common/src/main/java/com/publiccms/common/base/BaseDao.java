@@ -15,10 +15,11 @@ import java.util.concurrent.Future;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.ObjectNotFoundException;
-import org.hibernate.Query;
+import org.hibernate.query.Query;
+import org.hibernate.query.NativeQuery;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.search.FullTextQuery;
+import org.hibernate.search.jpa.FullTextQuery;
 import org.hibernate.search.FullTextSession;
 import org.hibernate.search.Search;
 import org.hibernate.search.query.dsl.QueryBuilder;
@@ -41,7 +42,7 @@ import com.publiccms.common.tools.CommonUtils;
  * @param <E>
  * 
  */
-public abstract class BaseDao<E> implements Base {
+public abstract class BaseDao<E> {
     protected final Log log = LogFactory.getLog(getClass());
     /**
      * 分面名称搜索前缀
@@ -66,11 +67,11 @@ public abstract class BaseDao<E> implements Base {
     /**
      * 查询处理器
      * 
-     * @param sql
+     * @param hql
      * @return queryhandler
      */
-    public static QueryHandler getQueryHandler(String sql) {
-        return new QueryHandler(sql);
+    public static QueryHandler getQueryHandler(String hql) {
+        return new QueryHandler(hql);
     }
 
     /**
@@ -80,26 +81,6 @@ public abstract class BaseDao<E> implements Base {
      */
     public static QueryHandler getQueryHandler() {
         return new QueryHandler();
-    }
-
-    /**
-     * 删除查询处理器
-     * 
-     * @param sql
-     * @return delete queryhandler
-     */
-    public static QueryHandler getDeleteQueryHandler(String sql) {
-        return getQueryHandler("delete").append(sql);
-    }
-
-    /**
-     * 统计查询处理器
-     * 
-     * @param sql
-     * @return count queryhandler
-     */
-    public static QueryHandler getCountQueryHandler(String sql) {
-        return getQueryHandler("select count(*)").append(sql);
     }
 
     /**
@@ -258,24 +239,38 @@ public abstract class BaseDao<E> implements Base {
 
     /**
      * @param queryHandler
+     * @param countHql
+     * @param pageIndex
+     * @param pageSize
+     * @param maxResults
+     * @return results page
+     */
+    protected PageHandler getPage(QueryHandler queryHandler, String countHql, Integer pageIndex, Integer pageSize,
+            Integer maxResults) {
+        PageHandler page;
+        if (CommonUtils.notEmpty(pageSize)) {
+            page = new PageHandler(pageIndex, pageSize, countResult(queryHandler, countHql), maxResults);
+            if (0 != pageSize) {
+                queryHandler.setFirstResult(page.getFirstResult()).setMaxResults(page.getPageSize());
+                page.setList(getList(queryHandler));
+            }
+        } else {
+            page = new PageHandler(pageIndex, pageSize, 0, maxResults);
+            queryHandler.setMaxResults(maxResults);
+            page.setList(getList(queryHandler));
+        }
+        return page;
+    }
+
+    /**
+     * @param queryHandler
      * @param pageIndex
      * @param pageSize
      * @param maxResults
      * @return results page
      */
     protected PageHandler getPage(QueryHandler queryHandler, Integer pageIndex, Integer pageSize, Integer maxResults) {
-        PageHandler page;
-        if (CommonUtils.notEmpty(pageSize)) {
-            page = new PageHandler(pageIndex, pageSize, countResult(queryHandler), maxResults);
-            queryHandler.setFirstResult(page.getFirstResult()).setMaxResults(page.getPageSize());
-            if (0 != pageSize) {
-                page.setList(getList(queryHandler));
-            }
-        } else {
-            page = new PageHandler(pageIndex, pageSize, 0, maxResults);
-            page.setList(getList(queryHandler));
-        }
-        return page;
+        return getPage(queryHandler, null, pageIndex, pageSize, maxResults);
     }
 
     /**
@@ -290,10 +285,14 @@ public abstract class BaseDao<E> implements Base {
 
     /**
      * @param query
+     * @param countHql
      * @return number of results
      */
-    protected long countResult(QueryHandler queryHandler) {
-        List<?> list = getCountQuery(queryHandler).list();
+    protected long countResult(QueryHandler queryHandler, String countHql) {
+        if (CommonUtils.empty(countHql)) {
+            countHql = queryHandler.getCountSql();
+        }
+        List<?> list = queryHandler.getQuery(getSession(), countHql).list();
         if (list.isEmpty()) {
             return 0;
         } else {
@@ -324,16 +323,16 @@ public abstract class BaseDao<E> implements Base {
         }
     }
 
-    private Query getQuery(QueryHandler queryHandler) {
+    private Query<?> getQuery(QueryHandler queryHandler) {
         return queryHandler.getQuery(getSession());
     }
 
-    private Query getCountQuery(QueryHandler queryHandler) {
-        return queryHandler.getCountQuery(getSession());
+    protected NativeQuery<?> getSqlQuery(String sql) {
+        return getSession().createSQLQuery(sql);
     }
 
     /**
-     * @param entityList
+     * @param entity
      */
     protected void index(E entity) {
         getFullTextSession().index(entity);
@@ -391,7 +390,7 @@ public abstract class BaseDao<E> implements Base {
         if (CommonUtils.notEmpty(pageSize)) {
             fullTextQuery.setFirstResult(page.getFirstResult()).setMaxResults(page.getPageSize());
         }
-        page.setList(fullTextQuery.list());
+        page.setList(fullTextQuery.getResultList());
         return page;
     }
 
@@ -460,7 +459,7 @@ public abstract class BaseDao<E> implements Base {
         if (CommonUtils.notEmpty(pageSize)) {
             fullTextQuery.setFirstResult(page.getFirstResult()).setMaxResults(page.getPageSize());
         }
-        page.setList(fullTextQuery.list());
+        page.setList(fullTextQuery.getResultList());
         return page;
     }
 

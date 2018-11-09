@@ -23,6 +23,8 @@ import org.hibernate.search.annotations.Field;
 import org.hibernate.search.annotations.FieldBridge;
 import org.hibernate.search.annotations.Indexed;
 import org.hibernate.search.annotations.Resolution;
+import org.hibernate.search.annotations.SortableField;
+import org.hibernate.search.annotations.Store;
 import org.hibernate.search.annotations.TokenizerDef;
 import org.hibernate.search.bridge.builtin.IntegerBridge;
 import org.hibernate.search.bridge.builtin.ShortBridge;
@@ -41,8 +43,9 @@ import com.publiccms.common.search.MultiTokenizerFactory;
 @Entity
 @Table(name = "cms_content")
 @DynamicUpdate
-@AnalyzerDef(name = "default", tokenizer = @TokenizerDef(factory = MultiTokenizerFactory.class))
-@Analyzer(definition = "default")
+@AnalyzerDef(name = "cms", tokenizer = @TokenizerDef(factory = MultiTokenizerFactory.class))
+@Analyzer(definition = "cms") // Comment this line to enable elasticsearch
+// @Analyzer(definition = "default") // Uncomment this line to enable elasticsearch
 @ClassBridge(impl = CmsContentBridge.class)
 @Indexed(interceptor = CmsContentInterceptor.class)
 public class CmsContent implements java.io.Serializable {
@@ -59,46 +62,51 @@ public class CmsContent implements java.io.Serializable {
     @JsonIgnore
     private short siteId;
     @GeneratorColumn(title = "标题", condition = true, like = true, or = true)
-    @Field
+    @Field(store = Store.COMPRESS)
     private String title;
     @GeneratorColumn(title = "发布用户", condition = true)
     private long userId;
     @GeneratorColumn(title = "审核用户", condition = true)
     private Long checkUserId;
     @GeneratorColumn(title = "分类", condition = true)
-    @Field(analyze = Analyze.NO)
+    @Field(analyze = Analyze.NO, store = Store.YES)
     @Facet(encoding = FacetEncodingType.STRING)
     @FieldBridge(impl = IntegerBridge.class)
     private int categoryId;
     @GeneratorColumn(title = "模型", condition = true)
-    @Field(analyze = Analyze.NO)
+    @Field(analyze = Analyze.NO, store = Store.YES)
     @Facet(encoding = FacetEncodingType.STRING)
     private String modelId;
     @GeneratorColumn(title = "父内容", condition = true)
+    @Field(analyze = Analyze.NO, store = Store.YES)
     private Long parentId;
     @GeneratorColumn(title = "是否转载")
     private boolean copied;
     @GeneratorColumn(title = "作者")
-    @Field(analyze = Analyze.NO)
+    @Field(analyze = Analyze.NO, store = Store.YES)
     private String author;
     @GeneratorColumn(title = "编辑")
-    @Field
+    @Field(analyze = Analyze.NO, store = Store.YES)
     private String editor;
     @GeneratorColumn(title = "外链")
+    @Field(analyze = Analyze.NO, store = Store.YES)
     private boolean onlyUrl;
     @GeneratorColumn(title = "有图片列表", condition = true)
+    @Field(analyze = Analyze.NO, store = Store.YES)
     private boolean hasImages;
     @GeneratorColumn(title = "有附件列表", condition = true)
+    @Field(analyze = Analyze.NO, store = Store.YES)
     private boolean hasFiles;
     @GeneratorColumn(title = "有静态化")
     private boolean hasStatic;
     @GeneratorColumn(title = "地址")
+    @Field(analyze = Analyze.NO, store = Store.YES)
     private String url;
     @GeneratorColumn(title = "描述")
-    @Field
+    @Field(store = Store.COMPRESS)
     private String description;
     @GeneratorColumn(title = "标签")
-    @Field
+    @Field(store = Store.YES)
     private String tagIds;
     @GeneratorColumn(title = "封面")
     private String cover;
@@ -112,8 +120,9 @@ public class CmsContent implements java.io.Serializable {
     private int clicks;
     @GeneratorColumn(title = "发布日期", condition = true, order = true)
     @DateTimeFormat(pattern = "yyyy-MM-dd HH:mm:ss")
-    @Field(analyze = Analyze.NO)
-    @DateBridge(resolution = Resolution.MILLISECOND)
+    @Field(analyze = Analyze.NO, store = Store.YES)
+    @DateBridge(resolution = Resolution.SECOND)
+    @SortableField
     private Date publishDate;
     @GeneratorColumn(title = "审核日期", order = true)
     private Date checkDate;
@@ -126,6 +135,7 @@ public class CmsContent implements java.io.Serializable {
     @GeneratorColumn(title = "状态", condition = true)
     private int status;
     @GeneratorColumn(title = "已删除", condition = true)
+    @JsonIgnore
     private boolean disabled;
 
     public CmsContent() {
@@ -225,7 +235,7 @@ public class CmsContent implements java.io.Serializable {
         return this.userId;
     }
 
-    public void setUserId(Long userId) {
+    public void setUserId(long userId) {
         this.userId = userId;
     }
 
@@ -401,13 +411,23 @@ public class CmsContent implements java.io.Serializable {
     }
 
     @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "publish_date", length = 19)
+    @Column(name = "publish_date", nullable = false, length = 19)
     public Date getPublishDate() {
         return this.publishDate;
     }
 
     public void setPublishDate(Date publishDate) {
         this.publishDate = publishDate;
+    }
+
+    @Temporal(TemporalType.TIMESTAMP)
+    @Column(name = "check_date", length = 19)
+    public Date getCheckDate() {
+        return this.checkDate;
+    }
+
+    public void setCheckDate(Date checkDate) {
+        this.checkDate = checkDate;
     }
 
     @Temporal(TemporalType.TIMESTAMP)
@@ -418,16 +438,6 @@ public class CmsContent implements java.io.Serializable {
 
     public void setUpdateDate(Date updateDate) {
         this.updateDate = updateDate;
-    }
-
-    @Temporal(TemporalType.TIMESTAMP)
-    @Column(name = "check_date", nullable = false, length = 19)
-    public Date getCheckDate() {
-        return this.checkDate;
-    }
-
-    public void setCheckDate(Date checkDate) {
-        this.checkDate = checkDate;
     }
 
     @Temporal(TemporalType.TIMESTAMP)

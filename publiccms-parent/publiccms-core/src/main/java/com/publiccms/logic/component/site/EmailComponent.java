@@ -21,7 +21,6 @@ import org.springframework.stereotype.Component;
 
 import com.publiccms.common.api.Config;
 import com.publiccms.common.api.SiteCache;
-import com.publiccms.common.base.Base;
 import com.publiccms.common.cache.CacheEntity;
 import com.publiccms.common.cache.CacheEntityFactory;
 import com.publiccms.common.constants.CommonConstants;
@@ -37,7 +36,7 @@ import com.publiccms.views.pojo.entities.ExtendField;
  *
  */
 @Component
-public class EmailComponent implements SiteCache, Config, Base {
+public class EmailComponent implements SiteCache, Config {
 
     /**
      * 
@@ -74,6 +73,10 @@ public class EmailComponent implements SiteCache, Config, Base {
     /**
      * 
      */
+    public static final String CONFIG_SSL = "ssl";
+    /**
+     * 
+     */
     public static final String CONFIG_FROMADDRESS = "fromAddress";
     /**
      * 
@@ -92,20 +95,28 @@ public class EmailComponent implements SiteCache, Config, Base {
      * @param config
      * @return mail sender
      */
-    public synchronized JavaMailSender getMailSender(short siteId, Map<String, String> config) {
+    public JavaMailSender getMailSender(short siteId, Map<String, String> config) {
         JavaMailSenderImpl javaMailSender = cache.get(siteId);
         if (null == javaMailSender) {
-            javaMailSender = new JavaMailSenderImpl();
-            javaMailSender.setDefaultEncoding(config.get(CONFIG_DEFAULTENCODING));
-            javaMailSender.setHost(config.get(CONFIG_HOST));
-            javaMailSender.setPort(Integer.parseInt(config.get(CONFIG_PORT)));
-            javaMailSender.setUsername(config.get(CONFIG_USERNAME));
-            javaMailSender.setPassword(config.get(CONFIG_PASSWORD));
-            Properties properties = new Properties();
-            properties.setProperty("mail.smtp.auth", config.get(CONFIG_AUTH));
-            properties.setProperty("mail.smtp.timeout", config.get(CONFIG_TIMEOUT));
-            javaMailSender.setJavaMailProperties(properties);
-            cache.put(siteId, javaMailSender);
+            synchronized (cache) {
+                javaMailSender = cache.get(siteId);
+                if (null == javaMailSender) {
+                    javaMailSender = new JavaMailSenderImpl();
+                    javaMailSender.setDefaultEncoding(config.get(CONFIG_DEFAULTENCODING));
+                    javaMailSender.setHost(config.get(CONFIG_HOST));
+                    javaMailSender.setPort(Integer.parseInt(config.get(CONFIG_PORT)));
+                    javaMailSender.setUsername(config.get(CONFIG_USERNAME));
+                    javaMailSender.setPassword(config.get(CONFIG_PASSWORD));
+                    Properties properties = new Properties();
+                    if ("true".equalsIgnoreCase(config.get(CONFIG_SSL))) {
+                        properties.setProperty("mail.smtp.socketFactory.class", "javax.net.ssl.SSLSocketFactory");
+                    }
+                    properties.setProperty("mail.smtp.auth", config.get(CONFIG_AUTH));
+                    properties.setProperty("mail.smtp.timeout", config.get(CONFIG_TIMEOUT));
+                    javaMailSender.setJavaMailProperties(properties);
+                    cache.put(siteId, javaMailSender);
+                }
+            }
         }
         return javaMailSender;
     }
@@ -148,7 +159,7 @@ public class EmailComponent implements SiteCache, Config, Base {
         if (CommonUtils.notEmpty(config) && CommonUtils.notEmpty(config.get(CONFIG_FROMADDRESS))) {
             JavaMailSender mailSender = getMailSender(siteId, config);
             MimeMessage message = mailSender.createMimeMessage();
-            MimeMessageHelper messageHelper = new MimeMessageHelper(message, false, DEFAULT_CHARSET_NAME);
+            MimeMessageHelper messageHelper = new MimeMessageHelper(message, false, CommonConstants.DEFAULT_CHARSET_NAME);
             messageHelper.setTo(toAddress);
             messageHelper.setFrom(config.get(CONFIG_FROMADDRESS));
             messageHelper.setSubject(title);
@@ -160,36 +171,41 @@ public class EmailComponent implements SiteCache, Config, Base {
     }
 
     @Override
-    public String getCode(SysSite site) {
+    public String getCode(SysSite site, boolean showAll) {
         return CONFIG_CODE;
     }
 
     @Override
-    public String getCodeDescription(SysSite site, Locale locale) {
-        return LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION);
+    public String getCodeDescription(Locale locale) {
+        return getMessage(locale, CONFIG_CODE_DESCRIPTION);
     }
 
     @Override
     public List<ExtendField> getExtendFieldList(SysSite site, Locale locale) {
         List<ExtendField> extendFieldList = new ArrayList<>();
-        extendFieldList.add(new ExtendField(CONFIG_DEFAULTENCODING, INPUTTYPE_TEXT, true,
-                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_DEFAULTENCODING), null,
-                DEFAULT_CHARSET_NAME));
-        extendFieldList.add(new ExtendField(CONFIG_HOST, INPUTTYPE_TEXT, true,
-                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_HOST), null, null));
-        extendFieldList.add(new ExtendField(CONFIG_PORT, INPUTTYPE_NUMBER, true,
-                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_PORT), null, String.valueOf(25)));
-        extendFieldList.add(new ExtendField(CONFIG_USERNAME, INPUTTYPE_TEXT, true,
-                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_USERNAME), null, null));
-        extendFieldList.add(new ExtendField(CONFIG_PASSWORD, INPUTTYPE_PASSWORD, true,
-                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_PASSWORD), null, null));
-        extendFieldList.add(new ExtendField(CONFIG_TIMEOUT, INPUTTYPE_NUMBER, true,
-                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_TIMEOUT), null,
+        extendFieldList.add(new ExtendField(CONFIG_DEFAULTENCODING, INPUTTYPE_TEXT, true, CONFIG_DEFAULTENCODING,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_DEFAULTENCODING),
+                CommonConstants.DEFAULT_CHARSET_NAME));
+        extendFieldList.add(new ExtendField(CONFIG_HOST, INPUTTYPE_TEXT, true, CONFIG_HOST, LanguagesUtils.getMessage(
+                CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_HOST), null));
+        extendFieldList.add(new ExtendField(CONFIG_PORT, INPUTTYPE_NUMBER, true, CONFIG_PORT,
+                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale,
+                        CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_PORT),
+                String.valueOf(25)));
+        extendFieldList.add(new ExtendField(CONFIG_USERNAME, INPUTTYPE_TEXT, true, CONFIG_USERNAME,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_USERNAME), null));
+        extendFieldList.add(new ExtendField(CONFIG_PASSWORD, INPUTTYPE_PASSWORD, true, CONFIG_PASSWORD,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_PASSWORD), null));
+        extendFieldList.add(new ExtendField(CONFIG_TIMEOUT, INPUTTYPE_NUMBER, true, CONFIG_TIMEOUT,
+                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale,
+                        CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_TIMEOUT),
                 String.valueOf(3000)));
-        extendFieldList.add(new ExtendField(CONFIG_AUTH, INPUTTYPE_BOOLEAN, true,
-                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_AUTH), null, null));
-        extendFieldList.add(new ExtendField(CONFIG_FROMADDRESS, INPUTTYPE_EMAIL, true,
-                LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_FROMADDRESS), null, null));
+        extendFieldList.add(new ExtendField(CONFIG_AUTH, INPUTTYPE_BOOLEAN, true, CONFIG_AUTH,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_AUTH), null));
+        extendFieldList.add(new ExtendField(CONFIG_SSL, INPUTTYPE_BOOLEAN, true, CONFIG_FROMADDRESS, LanguagesUtils.getMessage(
+                CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_SSL), null));
+        extendFieldList.add(new ExtendField(CONFIG_FROMADDRESS, INPUTTYPE_EMAIL, true, CONFIG_FROMADDRESS,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_FROMADDRESS), null));
         return extendFieldList;
     }
 
@@ -234,17 +250,13 @@ class SendTask implements Runnable {
     @Override
     public void run() {
         int i = 0;
-        while (i < 3) {
+        while (i < 2) {
             try {
                 mailSender.send(message);
                 break;
             } catch (Exception e) {
+                log.error(e.getMessage());
                 i++;
-                try {
-                    Thread.sleep(1000 * 60);
-                } catch (InterruptedException e1) {
-                    log.error(e1.getMessage());
-                }
             }
         }
     }

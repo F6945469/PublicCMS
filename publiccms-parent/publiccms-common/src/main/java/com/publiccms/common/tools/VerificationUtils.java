@@ -20,7 +20,7 @@ import javax.crypto.spec.DESedeKeySpec;
 
 import org.apache.commons.codec.binary.Base64;
 
-import com.publiccms.common.base.Base;
+import com.publiccms.common.constants.Constants;
 
 /**
  * 安全验证工具类
@@ -28,7 +28,7 @@ import com.publiccms.common.base.Base;
  * VerificationUtils
  *
  */
-public class VerificationUtils implements Base {
+public class VerificationUtils {
 
     /**
      * @param text
@@ -39,7 +39,7 @@ public class VerificationUtils implements Base {
         StringBuilder sb = new StringBuilder();
         while (0 < length) {
             length -= 1;
-            sb.append(text.charAt(random.nextInt(text.length())));
+            sb.append(text.charAt(Constants.random.nextInt(text.length())));
         }
         return sb.toString();
     }
@@ -52,7 +52,7 @@ public class VerificationUtils implements Base {
         StringBuilder sb = new StringBuilder();
         while (0 < length) {
             length -= 1;
-            sb.append(random.nextInt(9));
+            sb.append(Constants.random.nextInt(9));
         }
         return sb.toString();
     }
@@ -170,7 +170,7 @@ public class VerificationUtils implements Base {
     public static byte[] publicKeyDecode(byte[] publicKey, byte[] input) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.ENCRYPT_MODE, getPublicKey(publicKey));
+            cipher.init(Cipher.DECRYPT_MODE, getPublicKey(publicKey));
             return cipher.doFinal(input);
         } catch (Exception e) {
             return input;
@@ -187,7 +187,7 @@ public class VerificationUtils implements Base {
     public static byte[] privateKeyDecode(byte[] privateKey, byte[] input) {
         try {
             Cipher cipher = Cipher.getInstance("RSA");
-            cipher.init(Cipher.DECRYPT_MODE, getPrivateKey(privateKey));
+            cipher.init(Cipher.ENCRYPT_MODE, getPrivateKey(privateKey));
             return cipher.doFinal(input);
         } catch (Exception e) {
             return input;
@@ -281,12 +281,12 @@ public class VerificationUtils implements Base {
 
     public static byte[] encrypt(String input, String key) {
         try {
-            byte[] sha1Key = sha1Encode(key).getBytes(DEFAULT_CHARSET);
+            byte[] sha1Key = sha1Encode(key).getBytes(Constants.DEFAULT_CHARSET);
             DESedeKeySpec dks = new DESedeKeySpec(sha1Key);
             SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DESede");
             Cipher cipher = Cipher.getInstance("DESede");
             cipher.init(Cipher.ENCRYPT_MODE, keyFactory.generateSecret(dks));
-            return cipher.doFinal(input.getBytes(DEFAULT_CHARSET));
+            return cipher.doFinal(input.getBytes(Constants.DEFAULT_CHARSET));
         } catch (Exception e) {
             return null;
         }
@@ -302,16 +302,16 @@ public class VerificationUtils implements Base {
      */
     public static String decrypt(byte[] input, String key) {
         try {
-            byte[] sha1Key = sha1Encode(key).getBytes(DEFAULT_CHARSET);
+            byte[] sha1Key = sha1Encode(key).getBytes(Constants.DEFAULT_CHARSET);
             DESedeKeySpec dks = new DESedeKeySpec(sha1Key);
             SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("DESede");
             SecretKey sKey = keyFactory.generateSecret(dks);
             Cipher cipher = Cipher.getInstance("DESede");
             cipher.init(Cipher.DECRYPT_MODE, sKey);
             byte ciphertext[] = cipher.doFinal(input);
-            return new String(ciphertext, DEFAULT_CHARSET);
+            return new String(ciphertext, Constants.DEFAULT_CHARSET);
         } catch (Exception e) {
-            return "";
+            return Constants.BLANK;
         }
     }
 

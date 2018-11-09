@@ -16,23 +16,27 @@ public class LinkedProperties extends Properties {
 
     private static final long serialVersionUID = -4627607243846121965L;
 
-    private final LinkedHashSet<Object> keys = new LinkedHashSet<Object>();
+    private final LinkedHashSet<Object> keys = new LinkedHashSet<>();
 
-    public Enumeration<Object> keys() {
+    @Override
+    public synchronized Enumeration<Object> keys() {
         return Collections.<Object> enumeration(keys);
     }
 
-    public Object put(Object key, Object value) {
+    @Override
+    public synchronized Object put(Object key, Object value) {
         keys.add(key);
         return super.put(key, value);
     }
 
+    @Override
     public Set<Object> keySet() {
         return keys;
     }
 
+    @Override
     public Set<String> stringPropertyNames() {
-        Set<String> set = new LinkedHashSet<String>();
+        Set<String> set = new LinkedHashSet<>();
 
         for (Object key : this.keys) {
             set.add((String) key);

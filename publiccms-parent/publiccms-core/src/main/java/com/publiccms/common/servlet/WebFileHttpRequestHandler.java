@@ -11,18 +11,17 @@ import org.springframework.core.io.Resource;
 import org.springframework.web.servlet.resource.ResourceHttpRequestHandler;
 import org.springframework.web.util.UrlPathHelper;
 
-import com.publiccms.common.base.Base;
 import com.publiccms.common.constants.CmsVersion;
 import com.publiccms.common.constants.CommonConstants;
+import com.publiccms.entities.sys.SysSite;
 import com.publiccms.logic.component.site.SiteComponent;
-
 
 /**
  *
  * MultiSiteWebHttpRequestHandler 多站点静态资源处理器
  * 
  */
-public class WebFileHttpRequestHandler extends ResourceHttpRequestHandler implements Base {
+public class WebFileHttpRequestHandler extends ResourceHttpRequestHandler {
     private UrlPathHelper urlPathHelper = new UrlPathHelper();
     private SiteComponent siteComponent;
 
@@ -37,20 +36,27 @@ public class WebFileHttpRequestHandler extends ResourceHttpRequestHandler implem
     public void handleRequest(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
         response.addHeader(CommonConstants.getXPowered(), CmsVersion.getVersion());
         super.handleRequest(request, response);
+
     }
 
     @Override
     protected Resource getResource(HttpServletRequest request) throws IOException {
         String path = urlPathHelper.getLookupPathForRequest(request);
-        if (path.endsWith(SEPARATOR)) {
+        if (path.endsWith(CommonConstants.SEPARATOR)) {
             path += CommonConstants.getDefaultPage();
         }
-        Resource resource = new FileSystemResource(
-                siteComponent.getWebFilePath(siteComponent.getSite(request.getServerName()), path));
-        if (resource.exists() && resource.isReadable()) {
-            return resource;
-        } else {
-            return null;
+        SysSite site = siteComponent.getSite(request.getServerName());
+        Resource resource = new FileSystemResource(siteComponent.getWebFilePath(site, path));
+        if (resource.exists()) {
+            if (resource.isReadable()) {
+                return resource;
+            }
+        } else if (null != site.getParentId()) {
+            resource = new FileSystemResource(siteComponent.getParentSiteWebFilePath(site, path));
+            if (resource.exists() && resource.isReadable()) {
+                return resource;
+            }
         }
+        return null;
     }
 }

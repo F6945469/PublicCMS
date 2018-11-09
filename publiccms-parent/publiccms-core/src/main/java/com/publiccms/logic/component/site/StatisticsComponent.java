@@ -28,7 +28,7 @@ import com.publiccms.views.pojo.entities.CmsWordStatistics;
  */
 @Component
 public class StatisticsComponent implements Cache {
-    
+
     private CacheEntity<Long, CmsContentStatistics> contentCache;
     private CacheEntity<Long, CmsPlaceStatistics> placeCache;
     private CacheEntity<Long, CmsContentRelatedStatistics> relatedCache;
@@ -102,6 +102,7 @@ public class StatisticsComponent implements Cache {
                 entity.setName(word);
                 entity.setSiteId(siteId);
                 entity.setHidden(true);
+                entity.setSearchCount(1);
                 wordService.save(entity);
             }
             CmsWordStatistics wordStatistics = wordCache.get(entity.getId());
@@ -146,7 +147,7 @@ public class StatisticsComponent implements Cache {
      * @param id
      * @return content statistics
      */
-    public CmsContentStatistics clicks(Long id) {
+    public CmsContentStatistics contentClicks(Long id) {
         if (CommonUtils.notEmpty(id)) {
             CmsContentStatistics contentStatistics = contentCache.get(id);
             if (null == contentStatistics) {
@@ -163,6 +164,19 @@ public class StatisticsComponent implements Cache {
             return null;
         }
     }
+    /**
+     * @param id
+     * @return content clicks
+     */
+    public Integer getContentClicks(Long id) {
+        if (CommonUtils.notEmpty(id)) {
+            CmsContentStatistics contentStatistics = contentCache.get(id);
+            if (null != contentStatistics) {
+                return contentStatistics.getClicks();
+            }
+        }
+        return null;
+    }
 
     @Override
     public void clear() {
@@ -175,12 +189,13 @@ public class StatisticsComponent implements Cache {
 
     /**
      * @param cacheEntityFactory
-     * @throws IllegalAccessException 
-     * @throws InstantiationException 
-     * @throws ClassNotFoundException 
+     * @throws IllegalAccessException
+     * @throws InstantiationException
+     * @throws ClassNotFoundException
      */
     @Autowired
-    public void initCache(CacheEntityFactory cacheEntityFactory) throws ClassNotFoundException, InstantiationException, IllegalAccessException {
+    public void initCache(CacheEntityFactory cacheEntityFactory)
+            throws ClassNotFoundException, InstantiationException, IllegalAccessException {
         contentCache = cacheEntityFactory.createCacheEntity("content");
         placeCache = cacheEntityFactory.createCacheEntity("place");
         relatedCache = cacheEntityFactory.createCacheEntity("related");

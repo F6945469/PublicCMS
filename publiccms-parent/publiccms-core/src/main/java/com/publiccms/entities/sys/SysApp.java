@@ -35,10 +35,13 @@ public class SysApp implements java.io.Serializable {
     private String channel;
     @GeneratorColumn(title = "授权KEY")
     private String appKey;
+    @JsonIgnore
     @GeneratorColumn(title = "授权密码")
     private String appSecret;
     @GeneratorColumn(title = "授权接口")
     private String authorizedApis;
+    @GeneratorColumn(title = "过期时间")
+    private Integer expiryMinutes;
 
     public SysApp() {
     }
@@ -50,12 +53,13 @@ public class SysApp implements java.io.Serializable {
         this.appSecret = appSecret;
     }
 
-    public SysApp(short siteId, String channel, String appKey, String appSecret, String authorizedApis) {
+    public SysApp(short siteId, String channel, String appKey, String appSecret, String authorizedApis, Integer expiryMinutes) {
         this.siteId = siteId;
         this.channel = channel;
         this.appKey = appKey;
         this.appSecret = appSecret;
         this.authorizedApis = authorizedApis;
+        this.expiryMinutes = expiryMinutes;
     }
 
     @Id
@@ -113,6 +117,15 @@ public class SysApp implements java.io.Serializable {
 
     public void setAuthorizedApis(String authorizedApis) {
         this.authorizedApis = authorizedApis;
+    }
+    
+    @Column(name = "expiry_minutes")
+    public Integer getExpiryMinutes() {
+        return this.expiryMinutes;
+    }
+
+    public void setExpiryMinutes(Integer expiryMinutes) {
+        this.expiryMinutes = expiryMinutes;
     }
 
 }

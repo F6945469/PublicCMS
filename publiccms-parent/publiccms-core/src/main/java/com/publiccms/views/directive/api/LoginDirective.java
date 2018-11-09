@@ -1,16 +1,18 @@
 package com.publiccms.views.directive.api;
 
 import java.io.IOException;
+import java.util.Date;
 import java.util.UUID;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.time.DateUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.publiccms.common.base.AbstractAppDirective;
-import com.publiccms.common.base.AbstractController;
 import com.publiccms.common.handler.RenderHandler;
 import com.publiccms.common.tools.CommonUtils;
+import com.publiccms.common.tools.ControllerUtils;
 import com.publiccms.common.tools.RequestUtils;
 import com.publiccms.common.tools.VerificationUtils;
 import com.publiccms.entities.log.LogLogin;
@@ -37,7 +39,7 @@ public class LoginDirective extends AbstractAppDirective {
         boolean result = false;
         if (CommonUtils.notEmpty(username) && CommonUtils.notEmpty(password)) {
             SysSite site = getSite(handler);
-            if (AbstractController.verifyNotEMail(username)) {
+            if (ControllerUtils.verifyNotEMail(username)) {
                 user = service.findByName(site.getId(), username);
             } else {
                 user = service.findByEmail(site.getId(), username);
@@ -45,8 +47,9 @@ public class LoginDirective extends AbstractAppDirective {
             String ip = RequestUtils.getIpAddress(handler.getRequest());
             if (null != user && !user.isDisabled() && user.getPassword().equals(VerificationUtils.md5Encode(password))) {
                 String authToken = UUID.randomUUID().toString();
-                sysUserTokenService.save(
-                        new SysUserToken(authToken, site.getId(), user.getId(), app.getChannel(), CommonUtils.getDate(), ip));
+                Date now = CommonUtils.getDate();
+                sysUserTokenService.save(new SysUserToken(authToken, site.getId(), user.getId(), app.getChannel(), now,
+                        DateUtils.addDays(now, 30), ip));
                 service.updateLoginStatus(user.getId(), ip);
                 logLoginService.save(new LogLogin(site.getId(), username, user.getId(), ip, app.getChannel(), true,
                         CommonUtils.getDate(), null));

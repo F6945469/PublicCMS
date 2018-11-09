@@ -39,6 +39,10 @@ public abstract class AbstractFreemarkerView extends FreeMarkerView {
      */
     public static final String CONTEXT_BASE = "base";
     /**
+     * Base Context
+     */
+    public static final String CONTEXT_ADMNIN_BASE = "adminBase";
+    /**
      * Include Context
      */
     public static final String CONTEXT_INCLUDE = "include";
@@ -49,28 +53,30 @@ public abstract class AbstractFreemarkerView extends FreeMarkerView {
 
     @Override
     protected void exposeHelpers(Map<String, Object> model, HttpServletRequest request) throws Exception {
-        exposeAttribute(model, request.getScheme(), request.getServerName(), request.getServerPort(), request.getContextPath());
+        exposeAttribute(model, request);
         super.exposeHelpers(model, request);
     }
 
     /**
      * @param model
-     * @param scheme
-     * @param serverName
-     * @param serverPort
-     * @param contextPath
+     * @param request 
      */
-    public static void exposeAttribute(Map<String, Object> model, String scheme, String serverName, int serverPort,
-            String contextPath) {
-        if (80 == serverPort && "http".equals(scheme) || 443 == serverPort && "https".equals(scheme)) {
-            model.put(CONTEXT_BASE, new StringBuilder(scheme).append("://").append(serverName).append(contextPath).toString());
-        } else {
-            model.put(CONTEXT_BASE, new StringBuilder(scheme).append("://").append(serverName).append(":").append(serverPort)
-                    .append(contextPath).toString());
-        }
-
+    public static void exposeAttribute(Map<String, Object> model, HttpServletRequest request) {
+        String serverName = request.getServerName();
+        model.put(CONTEXT_BASE, getBasePath(request.getScheme(), request.getServerPort(), serverName, request.getContextPath()));
         model.put(CONTEXT_DOMAIN, BeanComponent.getSiteComponent().getDomain(serverName));
         exposeSite(model, BeanComponent.getSiteComponent().getSite(serverName));
+    }
+
+    public static String getBasePath(String scheme, int port, String serverName, String contextPath) {
+        String basePath;
+        if (80 == port && "http".equals(scheme) || 443 == port && "https".equals(scheme)) {
+            basePath = new StringBuilder(scheme).append("://").append(serverName).append(contextPath).toString();
+        } else {
+            basePath = new StringBuilder(scheme).append("://").append(serverName).append(":").append(port).append(contextPath)
+                    .toString();
+        }
+        return basePath;
     }
 
     /**
@@ -85,16 +91,16 @@ public abstract class AbstractFreemarkerView extends FreeMarkerView {
         model.put(CONTEXT_IMPORT, new MultiSiteImportDirective(site));
     }
 
-    protected void exposeParamters(Map<String, Object> model, HttpServletRequest request) {
+    protected void exposeParameters(Map<String, Object> model, HttpServletRequest request) {
         Enumeration<String> parameters = request.getParameterNames();
         while (parameters.hasMoreElements()) {
-            String paramterName = parameters.nextElement();
-            String[] values = request.getParameterValues(paramterName);
+            String parameterName = parameters.nextElement();
+            String[] values = request.getParameterValues(parameterName);
             if (CommonUtils.notEmpty(values)) {
                 if (1 < values.length) {
-                    model.put(paramterName, values);
+                    model.put(parameterName, values);
                 } else {
-                    model.put(paramterName, values[0]);
+                    model.put(parameterName, values[0]);
                 }
             }
         }

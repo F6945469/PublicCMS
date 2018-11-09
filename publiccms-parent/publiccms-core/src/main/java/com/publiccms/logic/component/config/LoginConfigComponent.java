@@ -7,9 +7,7 @@ import java.util.Locale;
 import org.springframework.stereotype.Component;
 
 import com.publiccms.common.api.Config;
-import com.publiccms.common.base.Base;
 import com.publiccms.common.constants.CommonConstants;
-import com.publiccms.common.tools.LanguagesUtils;
 import com.publiccms.entities.sys.SysSite;
 import com.publiccms.views.pojo.entities.ExtendField;
 
@@ -19,7 +17,11 @@ import com.publiccms.views.pojo.entities.ExtendField;
  *
  */
 @Component
-public class LoginConfigComponent implements Config, Base {
+public class LoginConfigComponent implements Config {
+    /**
+     * 
+     */
+    public static final String CONFIG_RETURN_URL = "return_url";
     /**
      * 
      */
@@ -31,25 +33,31 @@ public class LoginConfigComponent implements Config, Base {
     /**
      * 
      */
-    public static final String CONFIG_CODE_DESCRIPTION = CONFIGPREFIX + CONFIG_CODE_SITE;
-
-    @Override
-    public String getCode(SysSite site) {
-        return CONFIG_CODE_SITE;
-    }
-
-    @Override
-    public String getCodeDescription(SysSite site, Locale locale) {
-        return LanguagesUtils.getMessage(CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION);
-    }
+    public static final String CONFIG_EXPIRY_MINUTES_WEB = "expiry_minutes.web";
+    /**
+     * 
+     */
+    public static final String CONFIG_EXPIRY_MINUTES_MANAGER = "expiry_minutes.manager";
+    /**
+     * default expiry minutes
+     */
+    public static final int DEFAULT_EXPIRY_MINUTES = 30 * 24 * 60;
 
     @Override
     public List<ExtendField> getExtendFieldList(SysSite site, Locale locale) {
         List<ExtendField> extendFieldList = new ArrayList<>();
-        extendFieldList.add(new ExtendField(CONFIG_REGISTER_URL, INPUTTYPE_TEXT, true, LanguagesUtils.getMessage(
-                CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_REGISTER_URL), null, null));
-        extendFieldList.add(new ExtendField(CONFIG_LOGIN_PATH, INPUTTYPE_TEXT, false, LanguagesUtils.getMessage(
-                CommonConstants.applicationContext, locale, CONFIG_CODE_DESCRIPTION + DOT + CONFIG_LOGIN_PATH), null, null));
+        extendFieldList.add(new ExtendField(CONFIG_RETURN_URL, INPUTTYPE_TEXTAREA, false, CONFIG_RETURN_URL,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_RETURN_URL), null));
+        extendFieldList.add(new ExtendField(CONFIG_REGISTER_URL, INPUTTYPE_TEXT, false, CONFIG_REGISTER_URL,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_REGISTER_URL), null));
+        extendFieldList.add(new ExtendField(CONFIG_LOGIN_PATH, INPUTTYPE_TEXT, false, CONFIG_LOGIN_PATH,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_LOGIN_PATH), null));
+        extendFieldList.add(new ExtendField(CONFIG_EXPIRY_MINUTES_WEB, INPUTTYPE_NUMBER, false, CONFIG_EXPIRY_MINUTES_WEB,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_EXPIRY_MINUTES_WEB),
+                String.valueOf(DEFAULT_EXPIRY_MINUTES)));
+        extendFieldList.add(new ExtendField(CONFIG_EXPIRY_MINUTES_MANAGER, INPUTTYPE_NUMBER, false, CONFIG_EXPIRY_MINUTES_MANAGER,
+                getMessage(locale, CONFIG_CODE_DESCRIPTION + CommonConstants.DOT + CONFIG_EXPIRY_MINUTES_MANAGER),
+                String.valueOf(DEFAULT_EXPIRY_MINUTES)));
         return extendFieldList;
     }
 }

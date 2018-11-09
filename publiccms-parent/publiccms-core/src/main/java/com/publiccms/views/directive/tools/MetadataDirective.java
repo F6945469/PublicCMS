@@ -6,9 +6,12 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import com.publiccms.common.base.AbstractTemplateDirective;
+import com.publiccms.common.constants.CommonConstants;
 import com.publiccms.common.handler.RenderHandler;
 import com.publiccms.common.tools.CommonUtils;
 import com.publiccms.logic.component.template.MetadataComponent;
+import com.publiccms.views.pojo.entities.CmsPageData;
+import com.publiccms.views.pojo.entities.CmsPageMetadata;
 
 /**
  *
@@ -21,17 +24,15 @@ public class MetadataDirective extends AbstractTemplateDirective {
     @Override
     public void execute(RenderHandler handler) throws IOException, Exception {
         String path = handler.getString("path");
-        String dir = handler.getString("dir");
-        if (CommonUtils.notEmpty(path) && !path.endsWith(SEPARATOR)) {
-            handler.put("object",
-                            metadataComponent.getTemplateMetadata(siteComponent.getWebTemplateFilePath(getSite(handler), path)))
-                    .render();
-        } else if (null != dir) {
-            handler.put("object", metadataComponent.getTemplateMetadataMap(siteComponent.getWebTemplateFilePath(getSite(handler), dir)))
-                    .render();
+        if (CommonUtils.notEmpty(path) && !path.endsWith(CommonConstants.SEPARATOR)) {
+            CmsPageMetadata metadata = metadataComponent
+                    .getTemplateMetadata(siteComponent.getWebTemplateFilePath(getSite(handler), path));
+            CmsPageData data = metadataComponent
+                    .getTemplateData(siteComponent.getCurrentSiteWebTemplateFilePath(getSite(handler), path));
+            handler.put("object", metadata.getAsMap(data)).render();
         }
     }
-    
+
     @Override
     public boolean needAppToken() {
         return true;

@@ -25,7 +25,7 @@ public class CommonUtils {
      * @return 精确到分钟的当前日期
      */
     public static Date getMinuteDate() {
-        return DateUtils.setSeconds(DateUtils.setMilliseconds(getDate(), 0), 0);
+        return DateUtils.addMinutes(DateUtils.setSeconds(DateUtils.setMilliseconds(getDate(), 0), 0), 1);
     }
 
     /**
@@ -48,48 +48,16 @@ public class CommonUtils {
      * @param var
      * @return 是否非空
      */
-    public static boolean notEmpty(Long var) {
-        return null != var && 0 != var;
+    public static boolean notEmpty(Number var) {
+        return null != var;
     }
 
     /**
      * @param var
      * @return 是否为空
      */
-    public static boolean empty(Long var) {
-        return null == var || 0 == var;
-    }
-
-    /**
-     * @param var
-     * @return 是否非空
-     */
-    public static boolean notEmpty(Integer var) {
-        return null != var && 0 != var;
-    }
-
-    /**
-     * @param var
-     * @return 是否为空
-     */
-    public static boolean empty(Integer var) {
-        return null == var || 0 == var;
-    }
-
-    /**
-     * @param var
-     * @return 是否非空
-     */
-    public static boolean notEmpty(Short var) {
-        return null != var && 0 != var;
-    }
-
-    /**
-     * @param var
-     * @return 是否为空
-     */
-    public static boolean empty(Short var) {
-        return null == var || 0 == var;
+    public static boolean empty(Number var) {
+        return null == var;
     }
 
     /**
@@ -102,26 +70,10 @@ public class CommonUtils {
 
     /**
      * @param var
-     * @return 是否为空
-     */
-    public static boolean empty(List<?> var) {
-        return null == var || var.isEmpty();
-    }
-
-    /**
-     * @param var
      * @return 是否非空
      */
     public static boolean notEmpty(Map<?, ?> var) {
         return null != var && !var.isEmpty();
-    }
-
-    /**
-     * @param var
-     * @return 是否为空
-     */
-    public static boolean empty(Map<?, ?> var) {
-        return null == var || var.isEmpty();
     }
 
     /**

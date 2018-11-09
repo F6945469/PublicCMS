@@ -3,7 +3,6 @@ package config.spring;
 import java.beans.PropertyVetoException;
 import java.io.File;
 import java.io.IOException;
-import java.util.Locale;
 import java.util.Properties;
 
 import javax.sql.DataSource;
@@ -21,6 +20,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.env.Environment;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
@@ -31,17 +31,15 @@ import org.springframework.scheduling.quartz.SchedulerFactoryBean;
 import org.springframework.stereotype.Controller;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 import org.springframework.web.multipart.commons.CommonsMultipartResolver;
-import org.springframework.web.servlet.LocaleResolver;
-import org.springframework.web.servlet.i18n.SessionLocaleResolver;
 import org.springframework.web.servlet.view.freemarker.FreeMarkerConfigurer;
 
-import com.publiccms.common.base.Base;
 import com.publiccms.common.cache.CacheEntityFactory;
-import com.publiccms.common.constants.CmsVersion;
 import com.publiccms.common.constants.CommonConstants;
 import com.publiccms.common.database.CmsDataSource;
 import com.publiccms.common.search.MultiTokenizerFactory;
+import com.publiccms.common.tools.CommonUtils;
 import com.publiccms.logic.component.site.DirectiveComponent;
+import com.publiccms.logic.component.site.MenuMessageComponent;
 import com.publiccms.logic.component.site.SiteComponent;
 import com.publiccms.logic.component.template.TemplateComponent;
 
@@ -58,17 +56,10 @@ import com.publiccms.logic.component.template.TemplateComponent;
 @PropertySource({ "classpath:" + CommonConstants.CMS_CONFIG_FILE })
 @EnableTransactionManagement
 @EnableScheduling
-public class ApplicationConfig implements Base {
+public class ApplicationConfig {
 
     @Autowired
     private Environment env;
-
-    @Bean
-    public LocaleResolver localeResolver() {
-        SessionLocaleResolver localeResolver = new SessionLocaleResolver();
-        localeResolver.setDefaultLocale(Locale.forLanguageTag(env.getProperty("cms.defaultLocale")));
-        return localeResolver;
-    }
 
     /**
      * 数据源
@@ -78,20 +69,9 @@ public class ApplicationConfig implements Base {
      */
     @Bean
     public DataSource dataSource() throws PropertyVetoException {
-        CmsDataSource bean = new CmsDataSource(getDirPath("") + CmsDataSource.DATABASE_CONFIG_FILENAME);
-        // try {
-        // bean.put("other",
-        // CmsDataSource.initDataSource(loadAllProperties("config/database-other.properties")));
-        // } catch (IOException e1) {
-        // e1.printStackTrace();
-        // }
-        if (CmsVersion.isInitialized()) {
-            try {
-                CmsDataSource.initDefautlDataSource();
-            } catch (IOException | PropertyVetoException e) {
-                CmsVersion.setInitialized(false);
-            }
-        }
+        CmsDataSource bean = new CmsDataSource(
+                getDirPath(CommonConstants.BLANK) + CmsDataSource.DATABASE_CONFIG_FILENAME);
+        CmsDataSource.initDefautlDataSource();
         return bean;
     }
 
@@ -137,11 +117,13 @@ public class ApplicationConfig implements Base {
      * @throws IOException
      */
     @Bean
-    public FactoryBean<SessionFactory> hibernateSessionFactory(DataSource dataSource) throws PropertyVetoException, IOException {
+    public FactoryBean<SessionFactory> hibernateSessionFactory(DataSource dataSource)
+            throws PropertyVetoException, IOException {
         LocalSessionFactoryBean bean = new LocalSessionFactoryBean();
         bean.setDataSource(dataSource);
         bean.setPackagesToScan("com.publiccms.entities");
-        Properties properties = PropertiesLoaderUtils.loadAllProperties(env.getProperty("cms.hibernate.configFilePath"));
+        Properties properties = PropertiesLoaderUtils
+                .loadAllProperties(env.getProperty("cms.hibernate.configFilePath"));
         properties.setProperty("hibernate.search.default.indexBase", getDirPath("/indexes/"));
         MultiTokenizerFactory.setName(env.getProperty("cms.tokenizerFactory"));
         bean.setHibernateProperties(properties);
@@ -162,15 +144,18 @@ public class ApplicationConfig implements Base {
 
     /**
      * 国际化处理
+     * 
+     * @param menuMessageComponent
      *
      * @return message source
      */
     @Bean
-    public MessageSource messageSource() {
+    public MessageSource messageSource(MenuMessageComponent menuMessageComponent) {
         ResourceBundleMessageSource bean = new ResourceBundleMessageSource();
-        bean.setBasenames(StringUtils.split(env.getProperty("cms.language"), ","));
+        bean.setBasenames(StringUtils.split(env.getProperty("cms.language"), CommonConstants.COMMA_DELIMITED));
         bean.setCacheSeconds(300);
         bean.setUseCodeAsDefaultMessage(true);
+        bean.setParentMessageSource(menuMessageComponent);
         return bean;
     }
 
@@ -207,7 +192,7 @@ public class ApplicationConfig implements Base {
     @Bean
     public SiteComponent siteComponent() {
         SiteComponent bean = new SiteComponent();
-        bean.setRootPath(getDirPath(""));
+        bean.setRootPath(getDirPath(CommonConstants.BLANK));
         bean.setMasterSiteIds(env.getProperty("cms.masterSiteIds"));
         bean.setDefaultSiteId(Short.parseShort(env.getProperty("cms.defaultSiteId")));
         return bean;
@@ -223,7 +208,11 @@ public class ApplicationConfig implements Base {
     public FreeMarkerConfigurer freeMarkerConfigurer() throws IOException {
         FreeMarkerConfigurer bean = new FreeMarkerConfigurer();
         bean.setTemplateLoaderPath("classpath:/templates/");
-        Properties properties = PropertiesLoaderUtils.loadAllProperties(env.getProperty("cms.freemarker.configFilePath"));
+        Properties properties = PropertiesLoaderUtils
+                .loadAllProperties(env.getProperty("cms.freemarker.configFilePath"));
+        if (CommonUtils.notEmpty(env.getProperty("cms.defaultLocale"))) {
+            properties.put("locale", env.getProperty("cms.defaultLocale"));
+        }
         bean.setFreemarkerSettings(properties);
         return bean;
     }
@@ -247,20 +236,21 @@ public class ApplicationConfig implements Base {
      * 文件上传解决方案
      *
      * @return file upload resolver
+     * @throws IOException
      */
     @Bean
-    public CommonsMultipartResolver multipartResolver() {
+    public CommonsMultipartResolver multipartResolver() throws IOException {
         CommonsMultipartResolver bean = new CommonsMultipartResolver();
-        bean.setDefaultEncoding(DEFAULT_CHARSET_NAME);
+        bean.setDefaultEncoding(CommonConstants.DEFAULT_CHARSET_NAME);
         bean.setMaxUploadSize(Long.parseLong(env.getProperty("cms.multipart.maxUploadSize")) * 1024 * 1024);
+        bean.setUploadTempDir(new FileSystemResource(getDirPath("/temp/")));
         return bean;
     }
 
     /**
      * json、Jsonp消息转换适配器，用于支持RequestBody、ResponseBody
      *
-     * @return json、jsonp message converter , support for
-     *         requestbody、responsebody
+     * @return json、jsonp message converter , support for requestbody、responsebody
      */
     @Bean
     public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter() {
@@ -268,6 +258,9 @@ public class ApplicationConfig implements Base {
     }
 
     private String getDirPath(String path) {
+        if (null == CommonConstants.CMS_FILEPATH) {
+            CommonConstants.CMS_FILEPATH = System.getProperty("cms.filePath", env.getProperty("cms.filePath"));
+        }
         String filePath = CommonConstants.CMS_FILEPATH + path;
         File dir = new File(filePath);
         dir.mkdirs();

@@ -17,7 +17,7 @@ import org.apache.tools.zip.ZipEntry;
 import org.apache.tools.zip.ZipFile;
 import org.apache.tools.zip.ZipOutputStream;
 
-import com.publiccms.common.base.Base;
+import com.publiccms.common.constants.Constants;
 
 /**
  * 压缩/解压缩zip包处理类
@@ -25,11 +25,7 @@ import com.publiccms.common.base.Base;
  * ZipUtils
  *
  */
-public class ZipUtils implements Base {
-    static {
-        System.setProperty("sun.zip.encoding", System.getProperty("sun.jnu.encoding"));
-    }
-    private static final String ENCODING = System.getProperty("sun.jnu.encoding");
+public class ZipUtils {
 
     /**
      * @param sourceFilePath
@@ -58,9 +54,11 @@ public class ZipUtils implements Base {
                 try (FileOutputStream outputStream = new FileOutputStream(zipFile);
                         ZipOutputStream zipOutputStream = new ZipOutputStream(outputStream);
                         FileLock fileLock = outputStream.getChannel().tryLock();) {
-                    zipOutputStream.setEncoding(ENCODING);
-                    compress(Paths.get(sourceFilePath), zipOutputStream, BLANK);
-                    return true;
+                    if (null != fileLock) {
+                        zipOutputStream.setEncoding(Constants.DEFAULT_CHARSET_NAME);
+                        compress(Paths.get(sourceFilePath), zipOutputStream, Constants.BLANK);
+                        return true;
+                    }
                 }
             }
         }
@@ -78,10 +76,10 @@ public class ZipUtils implements Base {
             try (DirectoryStream<Path> stream = Files.newDirectoryStream(sourceFilePath);) {
                 for (Path entry : stream) {
                     BasicFileAttributes attrs = Files.readAttributes(entry, BasicFileAttributes.class);
-                    String fullName = BLANK.equals(basedir) ? entry.toFile().getName()
-                            : basedir + SEPARATOR + entry.toFile().getName();
+                    String fullName = Constants.BLANK.equals(basedir) ? entry.toFile().getName()
+                            : basedir + Constants.SEPARATOR + entry.toFile().getName();
                     if (attrs.isDirectory()) {
-                        ZipEntry zipEntry = new ZipEntry(fullName + SEPARATOR);
+                        ZipEntry zipEntry = new ZipEntry(fullName + Constants.SEPARATOR);
                         out.putNextEntry(zipEntry);
                         compress(entry, out, fullName);
                     } else {
@@ -114,47 +112,56 @@ public class ZipUtils implements Base {
 
     /**
      * @param zipFilePath
+     * @param encoding 
      * @throws IOException
      */
-    public static void unzipHere(String zipFilePath) throws IOException {
-        int index = zipFilePath.lastIndexOf("/");
+    public static void unzipHere(String zipFilePath, String encoding) throws IOException {
+        int index = zipFilePath.lastIndexOf(Constants.SEPARATOR);
         if (0 > index) {
             index = zipFilePath.lastIndexOf("\\");
         }
-        unzip(zipFilePath, zipFilePath.substring(0, index), true);
+        unzip(zipFilePath, zipFilePath.substring(0, index), encoding, true);
     }
 
     /**
      * @param zipFilePath
+     * @param encoding 
      * @throws IOException
      */
-    public static void unzip(String zipFilePath) throws IOException {
-        unzip(zipFilePath, zipFilePath.substring(0, zipFilePath.lastIndexOf(DOT)), true);
+    public static void unzip(String zipFilePath, String encoding) throws IOException {
+        unzip(zipFilePath, zipFilePath.substring(0, zipFilePath.lastIndexOf(Constants.DOT)), encoding, true);
     }
 
     /**
      * @param zipFilePath
      * @param targetPath
+     * @param encoding 
      * @param overwrite
      * @throws IOException
      */
-    public static void unzip(String zipFilePath, String targetPath, boolean overwrite) throws IOException {
-        ZipFile zipFile = new ZipFile(zipFilePath, ENCODING);
+    public static void unzip(String zipFilePath, String targetPath, String encoding, boolean overwrite) throws IOException {
+        ZipFile zipFile = new ZipFile(zipFilePath, encoding);
         Enumeration<? extends ZipEntry> entryEnum = zipFile.getEntries();
         if (null != entryEnum) {
             while (entryEnum.hasMoreElements()) {
                 ZipEntry zipEntry = entryEnum.nextElement();
+                String filePath = zipEntry.getName();
+                if (filePath.contains("..")) {
+                    filePath = filePath.replace("..", Constants.BLANK);
+                }
                 if (zipEntry.isDirectory()) {
-                    File dir = new File(targetPath + File.separator + zipEntry.getName());
+                    File dir = new File(targetPath + File.separator + filePath);
                     dir.mkdirs();
                 } else {
-                    File targetFile = new File(targetPath + File.separator + zipEntry.getName());
+                    File targetFile = new File(targetPath + File.separator + filePath);
                     if (!targetFile.exists() || overwrite) {
                         targetFile.getParentFile().mkdirs();
                         try (InputStream inputStream = zipFile.getInputStream(zipEntry);
                                 FileOutputStream outputStream = new FileOutputStream(targetFile);
                                 FileLock fileLock = outputStream.getChannel().tryLock();) {
-                            StreamUtils.copy(inputStream, outputStream);
+                            if (null != fileLock) {
+                                StreamUtils.copy(inputStream, outputStream);
+                            }
                         }
                     }
                 }

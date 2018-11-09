@@ -7,7 +7,6 @@ import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.StringUtils;
 
-import com.publiccms.common.base.Base;
 import com.publiccms.common.constants.CommonConstants;
 import com.publiccms.common.tools.IpUtils;
 import com.publiccms.common.tools.LicenseUtils;
@@ -17,7 +16,7 @@ import com.publiccms.common.tools.LicenseUtils;
  * CmsCopyright
  *
  */
-public class CmsCopyright implements Copyright, Base {
+public class CmsCopyright implements Copyright {
     private long lastModify = 0L;
     private License license;
 
@@ -38,7 +37,7 @@ public class CmsCopyright implements Copyright, Base {
             File licenseFile = new File(licenseFilePath);
             if (null == license || lastModify != licenseFile.lastModified()) {
                 try {
-                    String licenseText = FileUtils.readFileToString(licenseFile, DEFAULT_CHARSET);
+                    String licenseText = FileUtils.readFileToString(licenseFile, CommonConstants.DEFAULT_CHARSET);
                     license = LicenseUtils.readLicense(licenseText);
                     lastModify = licenseFile.lastModified();
                 } catch (IOException e) {
@@ -48,14 +47,14 @@ public class CmsCopyright implements Copyright, Base {
         return license;
     }
 
-    private boolean verifyDomain(String domain, String licenseDomain) {
+    private static boolean verifyDomain(String domain, String licenseDomain) {
         if ("*".equals(licenseDomain) || IpUtils.isIp(domain) || domain.toLowerCase().startsWith("dev.")
                 || -1 < domain.toLowerCase().indexOf(".dev.") || "localhost".equals(domain)) {
             return true;
         } else {
-            String[] licenseDomains = StringUtils.split(licenseDomain, ",");
+            String[] licenseDomains = StringUtils.split(licenseDomain, CommonConstants.COMMA_DELIMITED);
             int index;
-            while (0 < (index = domain.indexOf(DOT))) {
+            while (0 < (index = domain.indexOf(CommonConstants.DOT))) {
                 if (ArrayUtils.contains(licenseDomains, domain)) {
                     return true;
                 } else {

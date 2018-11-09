@@ -12,7 +12,6 @@ import java.util.Map.Entry;
 
 import javax.servlet.http.HttpServletRequest;
 
-import com.publiccms.common.base.Base;
 import com.publiccms.common.base.BaseHandler;
 import com.publiccms.common.tools.CommonUtils;
 import com.publiccms.common.tools.TemplateModelUtils;
@@ -30,9 +29,9 @@ import freemarker.template.TemplateModelException;
 /**
  *
  * TemplateDirectiveHandler
- * 
+ *
  */
-public class TemplateDirectiveHandler extends BaseHandler implements Base {
+public class TemplateDirectiveHandler extends BaseHandler {
     private Map<String, TemplateModel> parameters;
     private TemplateModel[] loopVars;
     private TemplateDirectiveBody templateDirectiveBody;
@@ -51,7 +50,7 @@ public class TemplateDirectiveHandler extends BaseHandler implements Base {
         this.loopVars = loopVars;
         this.templateDirectiveBody = templateDirectiveBody;
         this.environment = environment;
-        regristerParamters();
+        regristerParameters();
     }
 
     @Override
@@ -106,60 +105,56 @@ public class TemplateDirectiveHandler extends BaseHandler implements Base {
         }
     }
 
-    private TemplateModel getModel(String name) {
-        return parameters.get(name);
-    }
-
     /**
      * @param name
      * @return map value
      * @throws TemplateModelException
      */
     public TemplateHashModelEx getMap(String name) throws TemplateModelException {
-        return TemplateModelUtils.converMap(getModel(name));
+        return TemplateModelUtils.converMap(parameters.get(name));
     }
 
     @Override
-    protected String getStringWithoutRegrister(String name) throws TemplateModelException {
-        return TemplateModelUtils.converString(getModel(name));
+    protected String getStringWithoutRegister(String name) throws TemplateModelException {
+        return TemplateModelUtils.converString(parameters.get(name));
     }
 
     @Override
-    public Integer getIntegerWithoutRegrister(String name) throws TemplateModelException {
-        return TemplateModelUtils.converInteger(getModel(name));
+    public Integer getIntegerWithoutRegister(String name) throws TemplateModelException {
+        return TemplateModelUtils.converInteger(parameters.get(name));
     }
 
     @Override
     public Short getShort(String name) throws TemplateModelException {
-        regristerParamter(PARAMETER_TYPE_SHORT, name);
-        return TemplateModelUtils.converShort(getModel(name));
+        regristerParameter(PARAMETER_TYPE_SHORT, name);
+        return TemplateModelUtils.converShort(parameters.get(name));
     }
 
     @Override
     public Long getLong(String name) throws TemplateModelException {
-        regristerParamter(PARAMETER_TYPE_LONG, name);
-        return TemplateModelUtils.converLong(getModel(name));
+        regristerParameter(PARAMETER_TYPE_LONG, name);
+        return TemplateModelUtils.converLong(parameters.get(name));
     }
 
     @Override
     public Double getDouble(String name) throws TemplateModelException {
-        regristerParamter(PARAMETER_TYPE_DOUBLE, name);
-        return TemplateModelUtils.converDouble(getModel(name));
+        regristerParameter(PARAMETER_TYPE_DOUBLE, name);
+        return TemplateModelUtils.converDouble(parameters.get(name));
     }
 
     @Override
-    protected String[] getStringArrayWithoutRegrister(String name) throws TemplateModelException {
-        return TemplateModelUtils.converStringArray(getModel(name));
+    protected String[] getStringArrayWithoutRegister(String name) throws TemplateModelException {
+        return TemplateModelUtils.converStringArray(parameters.get(name));
     }
 
     @Override
-    protected Boolean getBooleanWithoutRegrister(String name) throws TemplateModelException {
-        return TemplateModelUtils.converBoolean(getModel(name));
+    protected Boolean getBooleanWithoutRegister(String name) throws TemplateModelException {
+        return TemplateModelUtils.converBoolean(parameters.get(name));
     }
 
     @Override
-    public Date getDateWithoutRegrister(String name) throws TemplateModelException, ParseException {
-        return TemplateModelUtils.converDate(getModel(name));
+    public Date getDateWithoutRegister(String name) throws TemplateModelException, ParseException {
+        return TemplateModelUtils.converDate(parameters.get(name));
     }
 
     @Override
